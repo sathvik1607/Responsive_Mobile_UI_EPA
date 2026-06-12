@@ -1,0 +1,40 @@
+.root {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Desktop sidebar visible */
+.sidebar {
+  display: none;
+}
+
+/* Mobile: no sidebar */
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: var(--bottom-nav-height);
+}
+
+/* Bottom nav visible on mobile */
+.bottomNav {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .sidebar {
+    display: block;
+  }
+
+  .main {
+    margin-left: var(--sidebar-width);
+    padding-bottom: 0;
+  }
+
+  .bottomNav {
+    display: none;
+  }
+}

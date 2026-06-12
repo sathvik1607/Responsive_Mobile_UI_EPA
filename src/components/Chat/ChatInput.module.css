@@ -1,0 +1,204 @@
+.container {
+  padding: 12px 16px calc(8px + env(safe-area-inset-bottom, 0px)) 16px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border);
+}
+
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 8px 8px 8px 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.inputRow:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+/* Pulsing border when mic is active */
+.inputRow.recording {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  animation: recordingBorder 2s ease infinite;
+}
+
+.inputRow.disabled {
+  opacity: 0.6;
+}
+
+/* ── Mic button ── */
+.micBtn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--bg-tertiary, rgba(255,255,255,0.06));
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  overflow: hidden;
+}
+
+.micBtn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+.micBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Active recording state */
+.micBtn.micActive {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+  animation: micPulse 1.2s ease infinite;
+}
+
+/* Ripple ring behind the button when recording */
+.ripple {
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  border: 2px solid #ef4444;
+  opacity: 0;
+  animation: rippleOut 1.2s ease infinite;
+  pointer-events: none;
+}
+
+/* ── Sound wave ─────────────────────────────────────────────────────────── */
+
+.soundWave {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px;
+  min-height: 36px;
+}
+
+.waveBar {
+  display: block;
+  width: 3px;
+  height: var(--bar-max, 20px);
+  background: #ef4444;
+  border-radius: 99px;
+  transform: scaleY(0.15);
+  transform-origin: center;
+  animation: waveBarAnim linear infinite;
+}
+
+.waveLabel {
+  margin-left: 10px;
+  font-size: 0.82rem;
+  color: #ef4444;
+  opacity: 0.8;
+  white-space: nowrap;
+  font-style: italic;
+  animation: labelBlink 1.6s ease-in-out infinite;
+}
+
+@keyframes waveBarAnim {
+  0%, 100% { transform: scaleY(0.15); opacity: 0.5; }
+  50%      { transform: scaleY(1);    opacity: 1;   }
+}
+
+@keyframes labelBlink {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1;   }
+}
+
+/* Visually hide textarea while wave is displayed (still in DOM for a11y) */
+.waveHidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* ── Textarea ── */
+.textarea {
+  flex: 1;
+  resize: none;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Interim speech text — slightly dimmed */
+.textarea.interim {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ── Send button ── */
+.sendBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #1A1B0D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.sendBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: scale(1.05);
+}
+
+.sendBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Hint ── */
+.hint {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 6px;
+}
+
+/* ── Animations ── */
+@keyframes micPulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.08); }
+}
+
+@keyframes rippleOut {
+  0%   { transform: scale(1);    opacity: 0.7; }
+  100% { transform: scale(1.45); opacity: 0; }
+}
+
+@keyframes recordingBorder {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+  50%       { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.25); }
+}

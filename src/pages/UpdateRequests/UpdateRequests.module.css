@@ -1,0 +1,403 @@
+/* ── Page layout ─────────────────────────────────────────────────────────────*/
+
+.page {
+  padding: 24px 28px;
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.roleBadge {
+  padding: 3px 12px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--accent-dim);
+  color: var(--accent-text);
+  border: 1px solid var(--accent);
+}
+
+.roleMember {
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* ── Sections ────────────────────────────────────────────────────────────────*/
+
+.section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionTitle {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count {
+  background: var(--accent-dim);
+  color: var(--accent-text);
+  padding: 1px 8px;
+  border-radius: 99px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.muted {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ── Compose form ────────────────────────────────────────────────────────────*/
+
+.composeForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.fieldGrow {
+  flex: 1;
+}
+
+.label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.input,
+.select,
+.textarea {
+  background: var(--bg-tertiary, var(--bg-hover));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--accent);
+}
+
+.select {
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.error {
+  font-size: 0.8rem;
+  color: var(--error);
+  margin: 0;
+}
+
+.success {
+  font-size: 0.8rem;
+  color: #4ade80;
+  margin: 0;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────────*/
+
+.btn {
+  align-self: flex-start;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #1A1B0D;
+  font-size: 0.86rem;
+  font-weight: 700;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) { filter: brightness(1.1); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnSecondary {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background: var(--bg-tertiary, #2a2b1a);
+  color: var(--text-primary);
+}
+
+.cancelBtn {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: var(--error-dim);
+  color: var(--error);
+  border: 1px solid rgba(248, 113, 113, 0.25);
+  transition: var(--transition);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cancelBtn:hover { background: var(--error); color: #fff; }
+
+.respondBtn {
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--accent-dim);
+  color: var(--accent-text);
+  border: 1px solid var(--accent);
+  transition: var(--transition);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.respondBtn:hover { background: var(--accent); color: #1A1B0D; }
+
+.expandBtn {
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: var(--bg-hover);
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.expandBtn:hover { color: var(--text-primary); }
+
+/* ── Request cards ───────────────────────────────────────────────────────────*/
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.requestCard {
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.requestCard:hover { border-color: var(--accent); }
+
+.requestCardPending {
+  border-left: 3px solid var(--accent);
+}
+
+.requestMeta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.requestInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.requestTo {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.requestTo strong { color: var(--text-primary); }
+
+.requestSubject {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.requestBodyPreview {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 380px;
+}
+
+.requestRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.requestDate {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── Status badges ───────────────────────────────────────────────────────────*/
+
+.badge {
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badgePending {
+  background: rgba(201, 162, 39, 0.15);
+  color: #c9a227;
+  border: 1px solid rgba(201, 162, 39, 0.3);
+}
+
+.badgeResponded {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+.badgeCancelled {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* ── Expanded content ────────────────────────────────────────────────────────*/
+
+.expandedBody {
+  border-top: 1px solid var(--border);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.expandBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.responseBlock {
+  border-left: 3px solid #4ade80;
+  padding-left: 10px;
+  margin-left: 2px;
+}
+
+.expandLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.expandText {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.respondedAt {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+/* ── Respond form ────────────────────────────────────────────────────────────*/
+
+.respondForm {
+  border-top: 1px solid var(--border);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.respondActions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────*/
+
+@media (max-width: 600px) {
+  .page { padding: 16px; }
+  .row  { flex-direction: column; }
+  .requestMeta { flex-wrap: wrap; }
+}
