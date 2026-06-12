@@ -147,6 +147,12 @@
   animation: pulse 1.8s ease-in-out infinite;
 }
 
+.fieldHint {
+  font-size: 0.75rem;
+  color: #f97316;
+  margin: -4px 0 4px;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 0.5; }
   50%       { opacity: 1; }

@@ -50,9 +50,10 @@ export default function UserSetup({ loginMode = false }) {
 
   const handleOwnerSubmit = async (e) => {
     e.preventDefault()
-    if (!ownerName.trim())   { setError('Name is required');         return }
-    if (!companyName.trim()) { setError('Company name is required'); return }
-    if (!ownerPwd)           { setError('Password is required');     return }
+    if (!ownerName.trim())        { setError('Name is required');                                          return }
+    if (/\d/.test(ownerName))     { setError('Do not add numbers in your name. Please use your full name.'); return }
+    if (!companyName.trim())      { setError('Company name is required');                                  return }
+    if (!ownerPwd)                { setError('Password is required');                                      return }
     setLoading(true)
     setError('')
     try {
@@ -67,9 +68,10 @@ export default function UserSetup({ loginMode = false }) {
 
   const handleMemberSubmit = async (e) => {
     e.preventDefault()
-    if (!memberName.trim()) { setError('Name is required');           return }
-    if (!selectedTeam)      { setError('Please select a company');    return }
-    if (!memberPwd)         { setError('Password is required');       return }
+    if (!memberName.trim())       { setError('Name is required');                                          return }
+    if (/\d/.test(memberName))    { setError('Do not add numbers in your name. Please use your full name.'); return }
+    if (!selectedTeam)            { setError('Please select a company');                                   return }
+    if (!memberPwd)               { setError('Password is required');                                      return }
     setLoading(true)
     setError('')
     try {
@@ -106,7 +108,7 @@ export default function UserSetup({ loginMode = false }) {
           <AlumnxSvg size={44} />
         </div>
         <h1 className={styles.title}>ALUMNX AI LABS</h1>
-        <p className={styles.subtitle}>Personal Executive Assistant</p>
+        <p className={styles.subtitle}>Personal Assistant</p>
 
         {!loginMode ? (
           <>
@@ -141,6 +143,9 @@ export default function UserSetup({ loginMode = false }) {
                   autoFocus
                   disabled={loading}
                 />
+                {/\d/.test(ownerName) && (
+                  <p className={styles.fieldHint}>Do not add numbers in your name. Please use your full name.</p>
+                )}
                 <label className={styles.label}>Company Name</label>
                 <input
                   className={styles.input}
@@ -180,6 +185,9 @@ export default function UserSetup({ loginMode = false }) {
                   autoFocus
                   disabled={loading}
                 />
+                {/\d/.test(memberName) && (
+                  <p className={styles.fieldHint}>Do not add numbers in your name. Please use your full name.</p>
+                )}
                 <label className={styles.label}>Password</label>
                 <input
                   className={styles.input}

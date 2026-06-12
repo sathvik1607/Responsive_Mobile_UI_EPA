@@ -45,9 +45,9 @@ export function UserProvider({ children }) {
     } catch (err) {
       // Map HTTP status codes to user-friendly messages
       const status = err?.response?.status
-      if (status === 404) throw new Error('No account found with that name.')
-      if (status === 401) throw new Error('Incorrect password.')
-      throw new Error('Login failed. Please try again.')
+      if (status === 404) throw new Error('No account found. Please register with a company first.')
+      if (status === 401) throw new Error('Incorrect password. Please try again.')
+      throw new Error('Could not connect. Check your network and try again.')
     }
     localStorage.setItem('pa_user', JSON.stringify(data))
     setUser(data)
