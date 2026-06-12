@@ -1,6 +1,6 @@
-# PEA — Personal Executive Assistant
+# PA — Personal Assistant
 
-A React-based frontend for PEA, your AI-powered personal executive assistant. Chat with PEA to manage your schedule, tasks, and meetings.
+A React 18 + Vite frontend for PA, an AI-powered personal assistant for teams. Owners manage tasks and meetings; members receive assignments and respond to update requests.
 
 ---
 
@@ -8,8 +8,8 @@ A React-based frontend for PEA, your AI-powered personal executive assistant. Ch
 
 - **React 18** + **Vite 5**
 - **React Router v6**
-- **CSS Modules** — dark olive theme
-- **Axios** for API calls
+- **CSS Modules** — dark olive theme, no CSS framework
+- **Axios** — with automatic primary/fallback URL switching
 
 ---
 
@@ -17,68 +17,71 @@ A React-based frontend for PEA, your AI-powered personal executive assistant. Ch
 
 ```bash
 npm install
-npm run dev
+cp .env.example .env   # set VITE_API_URL
+npm run dev            # http://localhost:3000
 ```
 
-Requires the PEA backend running on `http://localhost:8000`.
+`VITE_API_URL` accepts a comma-separated pair: `primary,fallback`. On any network error the app automatically retries on the fallback and sticks to it for the session.
+
+```
+VITE_API_URL=http://127.0.0.1:8000,https://pa-executive.onrender.com
+```
+
+---
+
+## User Roles
+
+| Role | Can do |
+|------|--------|
+| **Owner** | Register a team, create tasks/meetings via chat, send update requests to members, view all team tasks |
+| **Member** | Join an existing team, view assigned tasks, respond to update requests |
 
 ---
 
 ## Features
 
-| Screen | Description |
-|--------|-------------|
-| **Chat** (`/assistant`) | Talk to PEA — create tasks, meetings, get info |
-| **Schedule** (`/schedule`) | View, complete, or cancel upcoming tasks & meetings |
-| **Memory** (`/context`) | Timeline of what PEA remembers about you |
-
-**Schedule alerts** — a popup appears near a scheduled item's time asking "Did you complete this?" with Yes/No actions.
+| Page | Route | Description |
+|------|-------|-------------|
+| Assistant | `/assistant` | AI chat — create tasks, meetings, get info. Proactive server events injected every 2 s. |
+| Schedule | `/schedule` | Upcoming tasks & meetings; complete or cancel inline |
+| Tasks | `/tasks` | Role-aware task list — owner sees All/Overdue/Completed; member sees My Tasks/Completed |
+| Calendar | `/calendar` | Month grid view — gold dots for meetings, green for tasks; tap a day for details |
+| Notifications | `/notifications` | Polls every 15 s; unread badge on nav |
+| Memory | `/context` | AI knowledge base — what PA remembers about you |
+| Requests | `/requests` | Owner sends update requests; member responds |
+| Free Slots | `/free-slots` | Find available meeting times |
 
 ---
 
-## Backend API
+## Backend API (key endpoints)
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | `POST` | `/users` | Register / get existing user |
 | `POST` | `/auth/login` | Login with username + password |
-| `POST` | `/chat` | Send message, get AI response |
-| `GET`  | `/meetings/{user_id}` | Fetch upcoming meetings |
-| `GET`  | `/tasks/{user_id}` | Fetch pending tasks |
-| `GET`  | `/context/{user_id}` | Fetch memory/context |
+| `POST` | `/chat` | Send message, get AI response + intent |
+| `GET`  | `/meetings/{userId}` | Active meetings for team |
+| `GET`  | `/tasks/{userId}` | Owner's active tasks |
+| `GET`  | `/tasks/assigned/{userId}` | Member's assigned tasks |
 | `PATCH` | `/items/{id}/complete` | Mark item complete |
 | `DELETE` | `/items/{id}` | Cancel/delete item |
+| `GET`  | `/notifications/{userId}` | Fetch notifications |
+| `GET`  | `/context/{userId}` | AI memory/knowledge base |
 | `GET`  | `/health` | Backend health check |
 
 ---
 
-## Project Structure
+## Auth & Session
 
-```
-src/
-├── components/
-│   ├── Alert/          # Schedule alert popup
-│   ├── Layout/         # Sidebar + Layout wrapper
-│   └── Setup/          # Login screen
-├── context/
-│   ├── UserContext.jsx # Auth state (login/logout)
-│   └── ToastContext.jsx
-├── hooks/
-│   └── useScheduleAlerts.js
-├── pages/
-│   ├── Assistant/      # Chat UI
-│   ├── Schedule/       # Tasks & meetings view
-│   └── Context/        # Memory timeline
-└── services/
-    ├── api.js           # Axios base instance
-    ├── userService.js
-    ├── assistantService.js
-    ├── scheduleService.js
-    └── contextService.js
-```
+User object (including `role`) is stored in `localStorage` as `pa_user` and restored on page refresh. Chat history is stored per-user as `pa_messages_<userId>`. Logout clears both.
 
 ---
 
-## Auth Flow
+## Production Build
 
-Login is required on every page load (session-scoped). The same username always maps to the same backend user via a stable email (`username@pea.local`), so your data persists across sessions.
+```bash
+VITE_API_URL=https://your-backend.onrender.com npm run build
+# Output in dist/ — static files only, no Node.js needed on the server
+```
+
+See `ec2_deploy_frontend.md` for full EC2 + Nginx deploy instructions.
