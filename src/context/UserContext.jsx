@@ -5,7 +5,7 @@
 // even if the backend is slow (Render free-tier cold-start).
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { registerUser, loginUser, checkHealth } from '../services/userService'
+import { loginUser, checkHealth } from '../services/userService'
 
 const UserContext = createContext(null)
 
@@ -68,6 +68,16 @@ export function UserProvider({ children }) {
     setUser(null)
     setLoggedIn(false)
   }, [])
+
+  // Keep Render backend warm — ping /health every 10 min while logged in.
+  // Render free tier spins down after 15 min of inactivity (50-60 s cold start).
+  useEffect(() => {
+    if (!loggedIn) return
+    const id = setInterval(() => {
+      checkHealth().catch(() => {}) // fire-and-forget — errors don't matter here
+    }, 10 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [loggedIn])
 
   return (
     <UserContext.Provider value={{
