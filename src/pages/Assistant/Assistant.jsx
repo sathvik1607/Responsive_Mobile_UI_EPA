@@ -7,17 +7,13 @@
 
 import { useState, useEffect, useRef, useContext } from 'react'
 import { sendMessage } from '../../services/assistantService'
-import api from '../../services/api'
 import ChatMessage from '../../components/Chat/ChatMessage'
 import ChatInput from '../../components/Chat/ChatInput'
 import TypingIndicator from '../../components/Chat/TypingIndicator'
 import { useLocalStorage } from '../../hooks/useLocalStorage'
 import { useUser } from '../../context/UserContext'
 import { ToastContext } from '../../context/ToastContext'
-import { playNotificationSound } from '../../utils/notificationSound'
 import styles from './Assistant.module.css'
-
-const PROACTIVE_POLL = 2_000  // ms — how often to check for background server events
 
 function AlumnxSvg({ size = 22 }) {
   const h = Math.round(size * 1.1)
@@ -72,30 +68,23 @@ export default function Assistant() {
     return () => window.removeEventListener('pa:delete-session', handler)
   }, [setMessages])
 
-  // Poll for proactive messages pushed by background events (task completions, update requests, etc.)
+  // Listen for proactive messages dispatched by the global Layout poller.
+  // Layout handles the actual API polling so it works on all pages.
   useEffect(() => {
-    if (!userId) return
-    const fetchProactive = async () => {
-      try {
-        const { data } = await api.get(`/proactive-chat/${userId}`)
-        if (data.messages?.length) {
-          const injected = data.messages.map(text => ({
-            id:        crypto.randomUUID(),
-            role:      'assistant',
-            text,
-            timestamp: new Date().toISOString(),
-            proactive: true,
-          }))
-          playNotificationSound()
-          setMessages(prev => [...prev, ...injected])
-          window.dispatchEvent(new CustomEvent('pa:refresh-schedule'))
-        }
-      } catch { /* ignore */ }
+    const handler = (e) => {
+      const injected = e.detail.map(text => ({
+        id:        crypto.randomUUID(),
+        role:      'assistant',
+        text,
+        timestamp: new Date().toISOString(),
+        proactive: true,
+      }))
+      setMessages(prev => [...prev, ...injected])
     }
-    fetchProactive()
-    const id = setInterval(fetchProactive, PROACTIVE_POLL)
-    return () => clearInterval(id)
-  }, [userId, setMessages])
+    window.addEventListener('pa:proactive-messages', handler)
+    return () => window.removeEventListener('pa:proactive-messages', handler)
+  }, [setMessages])
+
 
   const handleSend = async (text) => {
     const userMsg = {

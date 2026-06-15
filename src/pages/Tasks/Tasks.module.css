@@ -188,7 +188,8 @@
 }
 
 .doneBtn,
-.deleteBtn {
+.deleteBtn,
+.startBtn {
   padding: 4px;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
@@ -201,13 +202,19 @@
   background: rgba(74, 222, 128, 0.12);
 }
 
+.startBtn:hover:not(:disabled) {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+}
+
 .deleteBtn:hover:not(:disabled) {
   color: var(--error);
   background: var(--error-dim);
 }
 
 .doneBtn:disabled,
-.deleteBtn:disabled {
+.deleteBtn:disabled,
+.startBtn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }

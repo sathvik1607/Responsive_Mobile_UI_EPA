@@ -106,7 +106,10 @@ function TaskCard({ item, onDelete, onComplete }) {
     <div className={`${styles.card} ${styles.type_task} ${item.is_overdue ? styles.cardOverdue : ''} ${confirming ? styles.cardConfirming : ''}`}>
       <div className={styles.cardIcon}>✅</div>
       <div className={styles.cardBody}>
-        <span className={styles.cardTitle}>{item.title}</span>
+        <span className={styles.cardTitle}>
+          {item.risk_flag && <span title="Sub-tasks are overdue" style={{marginRight:4}}>⚠️</span>}
+          {item.title}
+        </span>
         <div className={styles.cardMeta}>
           {item.due_label && (
             <span className={`${styles.metaDate} ${item.is_overdue ? styles.metaOverdue : ''}`}>
@@ -115,6 +118,14 @@ function TaskCard({ item, onDelete, onComplete }) {
           )}
           {item.description && (
             <span className={styles.metaDesc}>{item.description}</span>
+          )}
+          {item.subtask_count > 0 && (
+            <span className={styles.metaDesc} style={{color:'var(--text-muted,#888)'}}>
+              🔗 {item.subtask_count} sub-task{item.subtask_count !== 1 ? 's' : ''}
+            </span>
+          )}
+          {item.parent_task_id && (
+            <span className={styles.metaDesc} style={{color:'var(--text-muted,#888)'}}>↳ sub-task</span>
           )}
         </div>
       </div>
@@ -132,6 +143,11 @@ function TaskCard({ item, onDelete, onComplete }) {
       ) : (
         <div className={styles.cardRight}>
           <div className={styles.cardBadges}>
+            {item.risk_flag && (
+              <span className={styles.badge} style={{background:'#fef3c7',color:'#92400e',border:'1px solid #fde68a'}}>
+                Blocked
+              </span>
+            )}
             {item.priority && (
               <span className={`${styles.badge} ${styles[`pri_${item.priority}`]}`}>
                 {PRIORITY_LABEL[item.priority] ?? item.priority}

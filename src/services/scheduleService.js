@@ -36,3 +36,27 @@ export const cancelItem = (userId, itemId) =>
 // Marks a task completed; callers should invalidate the completed cache and call refresh()
 export const completeItem = (userId, itemId) =>
   api.patch(`/items/${itemId}/complete?user_id=${userId}`).then(r => r.data)
+
+// Sub-tasks this user delegated to others (tasks with a parent, created by this user)
+export const getDelegatedTasks = (userId) =>
+  api.get(`/tasks/${userId}/delegated`).then(r => r.data.tasks ?? [])
+
+// Tasks with pending sub-tasks that are blocking completion (risk_flag=1)
+export const getBlockedTasks = (userId) =>
+  api.get(`/tasks/${userId}/blocked`).then(r => r.data.tasks ?? [])
+
+// Full recursive task tree for a given task
+export const getTaskTree = (taskId, userId) =>
+  api.get(`/tasks/${taskId}/tree?user_id=${userId}`).then(r => r.data)
+
+// Active tasks this user created and assigned to someone else (all roles)
+export const getAssignedByMeTasks = (userId) =>
+  api.get(`/tasks/${userId}/assigned-by-me`).then(r => r.data.tasks ?? [])
+
+// Audit timeline for a single task
+export const getTaskTimeline = (taskId, userId) =>
+  api.get(`/tasks/${taskId}/timeline?user_id=${userId}`).then(r => r.data.timeline ?? [])
+
+// Update task status via UI button (Start / Block / etc.)
+export const updateItemStatus = (userId, itemId, status) =>
+  api.patch(`/items/${itemId}/status?user_id=${userId}&status=${status}`).then(r => r.data)

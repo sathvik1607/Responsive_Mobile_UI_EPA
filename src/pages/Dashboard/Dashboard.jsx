@@ -2,6 +2,7 @@ import { useState, useEffect, useContext, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { getEvents } from '../../services/calendarService'
 import { checkHealth } from '../../services/userService'
+import { getBlockedTasks } from '../../services/scheduleService'
 import { useUser } from '../../context/UserContext'
 import LoadingSpinner from '../../components/Common/LoadingSpinner'
 import { ToastContext } from '../../context/ToastContext'
@@ -54,15 +55,17 @@ function getCountdown(dateStr) {
 }
 
 export default function Dashboard() {
-  const [events, setEvents]     = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [apiOnline, setApiOnline] = useState(null)
-  const [now, setNow]           = useState(new Date())
+  const [events, setEvents]         = useState([])
+  const [blockedCount, setBlockedCount] = useState(0)
+  const [loading, setLoading]       = useState(true)
+  const [apiOnline, setApiOnline]   = useState(null)
+  const [now, setNow]               = useState(new Date())
   const { addToast } = useContext(ToastContext)
   const { userId } = useUser()
 
   const fetchEvents = useCallback(() => {
     getEvents(userId).then(setEvents).catch(() => {})
+    getBlockedTasks(userId).then(tasks => setBlockedCount(tasks.length)).catch(() => {})
   }, [userId])
 
   useEffect(() => {
@@ -71,6 +74,7 @@ export default function Dashboard() {
     Promise.allSettled([
       getEvents(userId).then(setEvents),
       checkHealth().then(() => setApiOnline(true)).catch(() => setApiOnline(false)),
+      getBlockedTasks(userId).then(tasks => setBlockedCount(tasks.length)).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [userId])
 
@@ -126,7 +130,13 @@ export default function Dashboard() {
       <div className={styles.statsGrid}>
         <StatCard icon="📅" label="Today's Events" value={loading ? '—' : todaysEvents.length} color="accent" />
         <StatCard icon="⏭️" label="Upcoming"       value={loading ? '—' : upcomingEvents.length} color="success" />
-        <StatCard icon="📋" label="Total Events"   value={loading ? '—' : events.length}        color="warning" />
+        <Link to="/tasks" style={{textDecoration:'none'}}>
+          <StatCard
+            icon="⚠️" label="At Risk"
+            value={loading ? '—' : blockedCount}
+            color={blockedCount > 0 ? 'error' : 'warning'}
+          />
+        </Link>
         <StatCard
           icon="🤖" label="AI Status"
           value={apiOnline === null ? '…' : apiOnline ? 'Ready' : 'Offline'}

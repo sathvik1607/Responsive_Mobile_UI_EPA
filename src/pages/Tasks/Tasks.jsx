@@ -5,7 +5,7 @@
 // so the list stays accurate without polling.
 
 import { useState, useCallback, useEffect } from 'react'
-import { cancelItem, completeItem, getCompletedTasks, getMemberCompletedTasks } from '../../services/scheduleService'
+import { cancelItem, completeItem, getCompletedTasks, getMemberCompletedTasks, getAssignedByMeTasks, updateItemStatus } from '../../services/scheduleService'
 import { useUser } from '../../context/UserContext'
 import { useSchedule } from '../../context/ScheduleContext'
 import styles from './Tasks.module.css'
@@ -39,7 +39,10 @@ function TaskCard({ item, onDelete, onComplete }) {
     <div className={`${styles.card} ${styles.type_task} ${item.is_overdue ? styles.cardOverdue : ''} ${confirming ? styles.cardConfirming : ''}`}>
       <div className={styles.cardIcon}>✅</div>
       <div className={styles.cardBody}>
-        <span className={styles.cardTitle}>{item.title}</span>
+        <span className={styles.cardTitle}>
+          {item.risk_flag && <span title="Sub-tasks are overdue" style={{marginRight:4}}>⚠️</span>}
+          {item.title}
+        </span>
         <div className={styles.cardMeta}>
           {item.due_label && (
             <span className={`${styles.metaDate} ${item.is_overdue ? styles.metaOverdue : ''}`}>
@@ -48,6 +51,16 @@ function TaskCard({ item, onDelete, onComplete }) {
           )}
           {item.description && (
             <span className={styles.metaDesc}>{item.description}</span>
+          )}
+          {item.subtask_count > 0 && (
+            <span className={styles.metaDesc} style={{color:'var(--text-muted,#888)'}}>
+              🔗 {item.subtask_count} sub-task{item.subtask_count !== 1 ? 's' : ''}
+            </span>
+          )}
+          {item.parent_task_id && (
+            <span className={styles.metaDesc} style={{color:'var(--text-muted,#888)'}}>
+              ↳ sub-task
+            </span>
           )}
         </div>
       </div>
@@ -65,6 +78,11 @@ function TaskCard({ item, onDelete, onComplete }) {
       ) : (
         <div className={styles.cardRight}>
           <div className={styles.cardBadges}>
+            {item.risk_flag && (
+              <span className={styles.badge} style={{background:'#fef3c7',color:'#92400e',border:'1px solid #fde68a'}}>
+                Blocked
+              </span>
+            )}
             {item.priority && (
               <span className={`${styles.badge} ${styles[`pri_${item.priority}`]}`}>
                 {PRIORITY_LABEL[item.priority] ?? item.priority}
@@ -88,14 +106,20 @@ function TaskCard({ item, onDelete, onComplete }) {
   )
 }
 
-// ── Assigned task card (member — complete only) ───────────────────────────────
+// ── Assigned task card (assignee view — complete + start) ────────────────────
 
-function AssignedTaskCard({ item, onComplete }) {
+function AssignedTaskCard({ item, onComplete, onStart }) {
   const [busy, setBusy] = useState(false)
 
   async function handleComplete() {
     setBusy(true)
     try { await onComplete(item.id) }
+    finally { setBusy(false) }
+  }
+
+  async function handleStart() {
+    setBusy(true)
+    try { await onStart(item.id) }
     finally { setBusy(false) }
   }
 
@@ -113,6 +137,11 @@ function AssignedTaskCard({ item, onComplete }) {
           {item.priority && (
             <span className={styles.metaDesc}>{PRIORITY_LABEL[item.priority] ?? item.priority} priority</span>
           )}
+          {item.owner_name && (
+            <span className={styles.metaDesc} style={{color:'var(--text-muted,#888)'}}>
+              Assigned by {item.owner_name}
+            </span>
+          )}
         </div>
       </div>
       <div className={styles.cardRight}>
@@ -122,6 +151,11 @@ function AssignedTaskCard({ item, onComplete }) {
           </span>
         </div>
         <div className={styles.actionBtns}>
+          {item.status === 'pending' && (
+            <button className={styles.startBtn} onClick={handleStart} disabled={busy} title="Mark as in progress">
+              <StartIcon />
+            </button>
+          )}
           <button className={styles.doneBtn} onClick={handleComplete} disabled={busy} title="Mark done">
             <DoneIcon />
           </button>
@@ -172,14 +206,17 @@ export default function Tasks() {
   const [completedLoading,  setCompletedLoading]  = useState(false)
   const [completedError,    setCompletedError]    = useState(null)
 
+  // Tasks this user created and assigned to someone else (all roles)
+  const [assignedByMeTasks,   setAssignedByMeTasks]   = useState([])
+  const [assignedByMeLoaded,  setAssignedByMeLoaded]  = useState(false)
+  const [assignedByMeLoading, setAssignedByMeLoading] = useState(false)
+
   // Active tab
   const ownerDefaultTab  = 'all'
   const memberDefaultTab = 'mine'
   const [activeTab, setActiveTab] = useState(role === 'member' ? memberDefaultTab : ownerDefaultTab)
 
   // Fetch completed tasks on first visit to the Completed tab.
-  // Uses different endpoints for members (/tasks/assigned) vs owners (/tasks).
-  // Cache is invalidated (completedLoaded = false) after any completeItem call.
   useEffect(() => {
     if (activeTab === 'completed' && !completedLoaded && !completedLoading) {
       setCompletedLoading(true)
@@ -191,6 +228,17 @@ export default function Tasks() {
         .finally(() => setCompletedLoading(false))
     }
   }, [activeTab, role, userId, completedLoaded, completedLoading])
+
+  // Fetch "assigned by me" tasks on first visit to that tab (all roles).
+  useEffect(() => {
+    if (activeTab === 'assignedByMe' && !assignedByMeLoaded && !assignedByMeLoading) {
+      setAssignedByMeLoading(true)
+      getAssignedByMeTasks(userId)
+        .then(data => { setAssignedByMeTasks(data ?? []); setAssignedByMeLoaded(true) })
+        .catch(() => {})
+        .finally(() => setAssignedByMeLoading(false))
+    }
+  }, [activeTab, userId, assignedByMeLoaded, assignedByMeLoading])
 
   const handleDelete = useCallback(async (itemId) => {
     await cancelItem(userId, itemId)
@@ -205,12 +253,21 @@ export default function Tasks() {
     refresh()
   }, [userId, refresh])
 
+  const handleStart = useCallback(async (itemId) => {
+    await updateItemStatus(userId, itemId, 'in_progress')
+    // Invalidate assigned-by-me cache so status reflects immediately
+    setAssignedByMeTasks([])
+    setAssignedByMeLoaded(false)
+    refresh()
+  }, [userId, refresh])
+
   // ── Tab definitions ────────────────────────────────────────────────────────
 
   const OWNER_TABS = [
-    { key: 'all',       label: 'All Tasks', count: tasks.length },
-    { key: 'overdue',   label: 'Overdue',   count: tasks.filter(t => t.is_overdue).length },
-    { key: 'completed', label: 'Completed', count: null },
+    { key: 'all',          label: 'All Tasks',       count: tasks.length },
+    { key: 'overdue',      label: 'Overdue',          count: tasks.filter(t => t.is_overdue).length },
+    { key: 'assignedByMe', label: 'Assigned By Me',   count: null },
+    { key: 'completed',    label: 'Completed',        count: null },
   ]
 
   // Merge own tasks + assigned tasks for members, deduplicated by id
@@ -220,8 +277,9 @@ export default function Tasks() {
   ])
 
   const MEMBER_TABS = [
-    { key: 'mine',      label: 'My Tasks',  count: memberActive.length },
-    { key: 'completed', label: 'Completed', count: null },
+    { key: 'mine',         label: 'My Tasks',        count: memberActive.length },
+    { key: 'assignedByMe', label: 'Assigned By Me',  count: null },
+    { key: 'completed',    label: 'Completed',       count: null },
   ]
 
   const tabs = role === 'member' ? MEMBER_TABS : OWNER_TABS
@@ -230,22 +288,26 @@ export default function Tasks() {
 
   function getItems() {
     if (role === 'member') {
-      if (activeTab === 'mine')      return memberActive
-      if (activeTab === 'completed') return completedTasks
+      if (activeTab === 'mine')         return memberActive
+      if (activeTab === 'assignedByMe') return assignedByMeTasks
+      if (activeTab === 'completed')    return completedTasks
       return []
     }
-    if (activeTab === 'all')       return tasks
-    if (activeTab === 'overdue')   return tasks.filter(t => t.is_overdue)
-    if (activeTab === 'completed') return completedTasks
+    if (activeTab === 'all')          return tasks
+    if (activeTab === 'overdue')      return tasks.filter(t => t.is_overdue)
+    if (activeTab === 'assignedByMe') return assignedByMeTasks
+    if (activeTab === 'completed')    return completedTasks
     return []
   }
 
-  const items        = getItems()
-  const isCompletedTab = activeTab === 'completed'
+  const items             = getItems()
+  const isCompletedTab    = activeTab === 'completed'
+  const isAssignedByMeTab = activeTab === 'assignedByMe'
 
   function renderCard(item) {
-    if (isCompletedTab) return <CompletedTaskCard key={item.id} item={item} />
-    if (role === 'member') return <AssignedTaskCard key={item.id} item={item} onComplete={handleComplete} />
+    if (isCompletedTab)    return <CompletedTaskCard key={item.id} item={item} />
+    if (isAssignedByMeTab) return <TaskCard key={item.id} item={item} onDelete={handleDelete} onComplete={handleComplete} />
+    if (role === 'member') return <AssignedTaskCard key={item.id} item={item} onComplete={handleComplete} onStart={handleStart} />
     return <TaskCard key={item.id} item={item} onDelete={handleDelete} onComplete={handleComplete} />
   }
 
@@ -291,7 +353,7 @@ export default function Tasks() {
           <p>{error}</p>
           <button className={styles.retryBtn} onClick={refresh}>Retry</button>
         </div>
-      ) : isCompletedTab && completedLoading ? (
+      ) : (isCompletedTab && completedLoading) || (isAssignedByMeTab && assignedByMeLoading) ? (
         <div className={styles.skeletonWrap}>
           {[1, 2, 3].map(n => <div key={n} className={styles.skeleton} />)}
         </div>
@@ -304,7 +366,11 @@ export default function Tasks() {
         <div className={styles.allEmpty}>
           <span className={styles.allEmptyIcon}>✅</span>
           <p>
-            {isCompletedTab ? 'No completed tasks yet.' : 'No tasks here. Ask P.A to create one via chat.'}
+            {isCompletedTab
+              ? 'No completed tasks yet.'
+              : isAssignedByMeTab
+              ? 'No tasks assigned to others yet. Ask P.A to assign a task to a team member.'
+              : 'No tasks here. Ask P.A to create one via chat.'}
           </p>
         </div>
       ) : (
@@ -346,6 +412,14 @@ function RefreshIcon() {
       <polyline points="23 4 23 10 17 10" />
       <polyline points="1 20 1 14 7 14" />
       <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    </svg>
+  )
+}
+
+function StartIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+      <polygon points="5 3 19 12 5 21 5 3" />
     </svg>
   )
 }
