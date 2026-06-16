@@ -5,11 +5,12 @@ import {
   respondToRequest, cancelUpdateRequest,
 } from '../../services/updateRequestService'
 import { getTeamMembers } from '../../services/userService'
+import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './UpdateRequests.module.css'
 
 function fmtDate(str) {
   if (!str) return ''
-  return new Date(str).toLocaleDateString('en-US', {
+  return parseServerDate(str).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }

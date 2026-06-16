@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getContext } from '../../services/contextService'
 import { useUser } from '../../context/UserContext'
+import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './Context.module.css'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function timeAgo(iso) {
   if (!iso) return ''
-  const diff = Date.now() - new Date(iso).getTime()
+  const diff = Date.now() - parseServerDate(iso).getTime()
   const mins  = Math.floor(diff / 60_000)
   const hrs   = Math.floor(diff / 3_600_000)
   const days  = Math.floor(diff / 86_400_000)

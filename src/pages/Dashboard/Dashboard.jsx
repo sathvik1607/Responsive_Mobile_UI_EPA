@@ -6,6 +6,7 @@ import { getBlockedTasks } from '../../services/scheduleService'
 import { useUser } from '../../context/UserContext'
 import LoadingSpinner from '../../components/Common/LoadingSpinner'
 import { ToastContext } from '../../context/ToastContext'
+import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './Dashboard.module.css'
 
 function getGreeting() {
@@ -23,7 +24,7 @@ function todayStr() {
 
 // Returns urgency tier based on minutes until event starts
 function getUrgency(startStr) {
-  const mins = (new Date(startStr) - Date.now()) / 60_000
+  const mins = (parseServerDate(startStr) - Date.now()) / 60_000
   if (mins < -5)  return 'past'      // already over (or >5 min passed)
   if (mins <= 15) return 'now'       // starting right now / in 15 min
   if (mins <= 30) return 'urgent'    // 15–30 min  → orange
@@ -40,12 +41,12 @@ function urgencyLabel(u) {
 
 function fmtTime(str) {
   if (!str) return ''
-  try { return new Date(str).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+  try { return parseServerDate(str).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   catch { return str }
 }
 
 function getCountdown(dateStr) {
-  const diff = new Date(dateStr) - Date.now()
+  const diff = parseServerDate(dateStr) - Date.now()
   if (diff <= 0) return 'Starting now'
   const h = Math.floor(diff / 3_600_000)
   const m = Math.floor((diff % 3_600_000) / 60_000)
@@ -93,14 +94,14 @@ export default function Dashboard() {
   const todayStr2 = now.toDateString()
   const todaysEvents = events
     .filter((e) => {
-      const d = new Date(e.start_time || e.start)
+      const d = parseServerDate(e.start_time || e.start)
       return !isNaN(d) && d.toDateString() === todayStr2
     })
-    .sort((a, b) => new Date(a.start_time || a.start) - new Date(b.start_time || b.start))
+    .sort((a, b) => parseServerDate(a.start_time || a.start) - parseServerDate(b.start_time || b.start))
 
   const upcomingEvents = events
-    .filter((e) => new Date(e.start_time || e.start) > now)
-    .sort((a, b) => new Date(a.start_time || a.start) - new Date(b.start_time || b.start))
+    .filter((e) => parseServerDate(e.start_time || e.start) > now)
+    .sort((a, b) => parseServerDate(a.start_time || a.start) - parseServerDate(b.start_time || b.start))
     .slice(0, 3)
 
   const nextEvent = upcomingEvents[0]
@@ -232,8 +233,8 @@ function Timeline({ events, now }) {
 
         // Insert NOW marker before the first future event
         const showNowMarker = i > 0 &&
-          new Date(events[i - 1].start_time || events[i - 1].start).getTime() < nowTime &&
-          new Date(startStr).getTime() > nowTime
+          parseServerDate(events[i - 1].start_time || events[i - 1].start).getTime() < nowTime &&
+          parseServerDate(startStr).getTime() > nowTime
 
         return (
           <div key={e.id || i}>

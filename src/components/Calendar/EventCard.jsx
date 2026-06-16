@@ -1,9 +1,10 @@
+import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './EventCard.module.css'
 
 function formatTime(str) {
   if (!str) return ''
   try {
-    return new Date(str).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    return parseServerDate(str).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   } catch {
     return str
   }
@@ -12,7 +13,7 @@ function formatTime(str) {
 function getDateParts(str) {
   if (!str) return { day: '--', month: '---' }
   try {
-    const d = new Date(str)
+    const d = parseServerDate(str)
     return {
       day: d.getDate(),
       month: d.toLocaleString('default', { month: 'short' }).toUpperCase(),

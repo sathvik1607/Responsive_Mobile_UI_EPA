@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { useUser } from '../../context/UserContext'
 import { useSchedule } from '../../context/ScheduleContext'
 import { useNotifications } from '../../context/NotificationContext'
+import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './Sidebar.module.css'
 
 // ── Today's Summary panel ─────────────────────────────────────────────────────
@@ -21,8 +22,8 @@ function TodayPanel() {
   // Fallback: next soonest non-today meeting
   const nextMeeting = parts.length === 0
     ? [...meetings]
-        .filter(m => !m.is_today && m.scheduled_at && new Date(m.scheduled_at) > Date.now())
-        .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))[0]
+        .filter(m => !m.is_today && m.scheduled_at && parseServerDate(m.scheduled_at) > Date.now())
+        .sort((a, b) => parseServerDate(a.scheduled_at) - parseServerDate(b.scheduled_at))[0]
     : null
 
   // Apply display title rule: member sees "Meeting with {owner_name}" for invited meetings

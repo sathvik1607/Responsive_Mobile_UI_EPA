@@ -12,6 +12,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { getMeetings, getTasks, getAssignedTasks, completeItem } from '../services/scheduleService'
 import { useUser } from '../context/UserContext'
 import { playNotificationSound } from '../utils/notificationSound'
+import { parseServerDate } from '../utils/parseServerDate'
 
 const WINDOW_BEFORE_MINS = 2   // alert this many minutes before the item's time
 const WINDOW_AFTER_MINS  = 30  // keep alerting for this many minutes after the item's time
@@ -66,7 +67,7 @@ export function useScheduleAlerts() {
         const baseKey = item._alertKey || `${item._type}_${item.id}`
         if (!item._time) return
 
-        const diffMins = (now - new Date(item._time).getTime()) / 60_000
+        const diffMins = (now - parseServerDate(item._time).getTime()) / 60_000
         if (diffMins >= -WINDOW_BEFORE_MINS && diffMins <= WINDOW_AFTER_MINS) {
           const isPast = diffMins >= 0
           // Meetings use separate keys per phase so both upcoming and started alerts fire

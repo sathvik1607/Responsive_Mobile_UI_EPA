@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNotifications } from '../../context/NotificationContext'
+import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './Notifications.module.css'
 
 function fmtRelative(str) {
   if (!str) return ''
-  const diff = Date.now() - new Date(str).getTime()
+  const diff = Date.now() - parseServerDate(str).getTime()
   const m = Math.floor(diff / 60_000)
   const h = Math.floor(diff / 3_600_000)
   const d = Math.floor(diff / 86_400_000)

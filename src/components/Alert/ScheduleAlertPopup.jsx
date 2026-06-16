@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useScheduleAlerts } from '../../hooks/useScheduleAlerts'
+import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './ScheduleAlertPopup.module.css'
 
 export default function ScheduleAlertPopup() {
@@ -31,7 +32,7 @@ export default function ScheduleAlertPopup() {
   const isUpcomingMeeting = isMeeting && !item._isPast
 
   if (isUpcomingMeeting) {
-    const mins = Math.max(1, Math.round((new Date(item.scheduled_at) - Date.now()) / 60_000))
+    const mins = Math.max(1, Math.round((parseServerDate(item.scheduled_at) - Date.now()) / 60_000))
     question = `Starting in ${mins} minute${mins !== 1 ? 's' : ''}`
     yesLabel = 'Got it'
   } else if (item._assigned_by_owner) {
@@ -88,7 +89,7 @@ export default function ScheduleAlertPopup() {
 
 function fmtTime(iso) {
   try {
-    return new Date(iso).toLocaleTimeString('en-IN', {
+    return parseServerDate(iso).toLocaleTimeString('en-IN', {
       hour: '2-digit', minute: '2-digit', weekday: 'short',
     })
   } catch { return '' }
