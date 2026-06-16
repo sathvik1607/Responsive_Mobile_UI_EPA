@@ -35,12 +35,23 @@ export default function Layout() {
       } catch { /* ignore */ }
     }
 
+    const bufferKey = `pa_pending_chat_${userId}`
+    const bufferMessages = (msgs) => {
+      try {
+        const existing = JSON.parse(localStorage.getItem(bufferKey) || '[]')
+        localStorage.setItem(bufferKey, JSON.stringify([...existing, ...msgs]))
+      } catch { /* ignore */ }
+    }
+
     const fetchProactive = async () => {
       try {
         const { data } = await api.get(`/proactive-chat/${userId}`)
         if (data.messages?.length) {
           playNotificationSound()
           window.dispatchEvent(new CustomEvent('pa:refresh-schedule'))
+          // Buffer first so the event handler (if on chat page) can clear it;
+          // if user is on another page the buffer persists until chat mounts.
+          bufferMessages(data.messages)
           window.dispatchEvent(new CustomEvent('pa:proactive-messages', { detail: data.messages }))
           // Pre-mark DB notifications as shown so the injector doesn't duplicate them
           await markCurrentNotificationsShown()
@@ -59,6 +70,8 @@ export default function Layout() {
     if (!userId) return
     const shownKey = `pa_shown_notifications_${userId}`
 
+    const SCHEDULE_TYPES = new Set(['meeting_update', 'task_assigned', 'task_completed'])
+
     const injectUnread = async () => {
       try {
         const { data } = await api.get(`/notifications/${userId}?unread_only=true`)
@@ -68,6 +81,16 @@ export default function Layout() {
         if (toShow.length === 0) return
         const messages = toShow.map(n => n.message)
         playNotificationSound()
+        // Refresh schedule if any notification affects meetings or assigned tasks
+        if (toShow.some(n => SCHEDULE_TYPES.has(n.type))) {
+          window.dispatchEvent(new CustomEvent('pa:refresh-schedule'))
+        }
+        // Buffer before dispatching so the chat page can drain on mount if needed
+        try {
+          const chatBufKey = `pa_pending_chat_${userId}`
+          const existing = JSON.parse(localStorage.getItem(chatBufKey) || '[]')
+          localStorage.setItem(chatBufKey, JSON.stringify([...existing, ...messages]))
+        } catch { /* ignore */ }
         window.dispatchEvent(new CustomEvent('pa:proactive-messages', { detail: messages }))
         toShow.forEach(n => shown.add(n.id))
         localStorage.setItem(shownKey, JSON.stringify([...shown]))

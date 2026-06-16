@@ -1,8 +1,6 @@
-// Tasks page — shows active and completed tasks for owners and members.
-// Members see a merged "My Tasks" tab combining self-created tasks (from ScheduleContext.tasks)
-// and assigned tasks (from ScheduleContext.assignedTasks), deduplicated by ID.
-// Completed tasks are lazy-loaded on first tab visit and invalidated after any completeItem call
-// so the list stays accurate without polling.
+// Tasks page — flat hierarchy, all members equal.
+// "My Tasks" tab = merged own tasks + tasks assigned to me, deduped.
+// Completed tasks are lazy-loaded and invalidated after any completeItem call.
 
 import { useState, useCallback, useEffect } from 'react'
 import { cancelItem, completeItem, getCompletedTasks, getMemberCompletedTasks, getAssignedByMeTasks, updateItemStatus } from '../../services/scheduleService'
@@ -196,38 +194,36 @@ function CompletedTaskCard({ item }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Tasks() {
-  const { userId, user } = useUser()
-  const role = user?.role
+  const { userId } = useUser()
   const { tasks, assignedTasks, loaded, error, refresh } = useSchedule()
 
-  // Owner: lazily-loaded completed tasks
+  // Lazily-loaded completed tasks (both own and assigned, merged)
   const [completedTasks,    setCompletedTasks]    = useState([])
   const [completedLoaded,   setCompletedLoaded]   = useState(false)
   const [completedLoading,  setCompletedLoading]  = useState(false)
   const [completedError,    setCompletedError]    = useState(null)
 
-  // Tasks this user created and assigned to someone else (all roles)
+  // Tasks this user created and assigned to someone else
   const [assignedByMeTasks,   setAssignedByMeTasks]   = useState([])
   const [assignedByMeLoaded,  setAssignedByMeLoaded]  = useState(false)
   const [assignedByMeLoading, setAssignedByMeLoading] = useState(false)
 
-  // Active tab
-  const ownerDefaultTab  = 'all'
-  const memberDefaultTab = 'mine'
-  const [activeTab, setActiveTab] = useState(role === 'member' ? memberDefaultTab : ownerDefaultTab)
+  const [activeTab, setActiveTab] = useState('mine')
 
-  // Fetch completed tasks on first visit to the Completed tab.
+  // Fetch completed tasks on first visit — merge own + assigned
   useEffect(() => {
     if (activeTab === 'completed' && !completedLoaded && !completedLoading) {
       setCompletedLoading(true)
       setCompletedError(null)
-      const fetcher = role === 'member' ? getMemberCompletedTasks : getCompletedTasks
-      fetcher(userId)
-        .then(data => { setCompletedTasks(data ?? []); setCompletedLoaded(true) })
+      Promise.all([getCompletedTasks(userId), getMemberCompletedTasks(userId)])
+        .then(([own, assigned]) => {
+          setCompletedTasks(dedup([...(own ?? []), ...(assigned ?? [])]))
+          setCompletedLoaded(true)
+        })
         .catch(() => setCompletedError('Could not load completed tasks.'))
         .finally(() => setCompletedLoading(false))
     }
-  }, [activeTab, role, userId, completedLoaded, completedLoading])
+  }, [activeTab, userId, completedLoaded, completedLoading])
 
   // Fetch "assigned by me" tasks on first visit to that tab (all roles).
   useEffect(() => {
@@ -263,38 +259,30 @@ export default function Tasks() {
 
   // ── Tab definitions ────────────────────────────────────────────────────────
 
-  const OWNER_TABS = [
-    { key: 'all',          label: 'All Tasks',       count: tasks.length },
-    { key: 'overdue',      label: 'Overdue',          count: tasks.filter(t => t.is_overdue).length },
-    { key: 'assignedByMe', label: 'Assigned By Me',   count: null },
-    { key: 'completed',    label: 'Completed',        count: null },
-  ]
-
-  // Merge own tasks + assigned tasks for members, deduplicated by id
-  const memberActive = dedup([
+  // Merge own tasks + assigned tasks, deduped — active only
+  const allActive = dedup([
     ...tasks.filter(t => t.status !== 'completed'),
     ...assignedTasks.filter(t => t.status !== 'completed'),
   ])
+  const overdueItems = allActive.filter(t => t.is_overdue)
 
-  const MEMBER_TABS = [
-    { key: 'mine',         label: 'My Tasks',        count: memberActive.length },
+  // IDs of tasks created by me vs assigned to me by someone else
+  const ownTaskIds      = new Set(tasks.map(t => t.id))
+  const assignedTaskIds = new Set(assignedTasks.map(t => t.id))
+  const isAssignedByOther = (id) => assignedTaskIds.has(id) && !ownTaskIds.has(id)
+
+  const TABS = [
+    { key: 'mine',         label: 'My Tasks',       count: allActive.length },
+    { key: 'overdue',      label: 'Overdue',         count: overdueItems.length },
     { key: 'assignedByMe', label: 'Assigned By Me',  count: null },
     { key: 'completed',    label: 'Completed',       count: null },
   ]
 
-  const tabs = role === 'member' ? MEMBER_TABS : OWNER_TABS
-
   // ── Active items for current tab ───────────────────────────────────────────
 
   function getItems() {
-    if (role === 'member') {
-      if (activeTab === 'mine')         return memberActive
-      if (activeTab === 'assignedByMe') return assignedByMeTasks
-      if (activeTab === 'completed')    return completedTasks
-      return []
-    }
-    if (activeTab === 'all')          return tasks
-    if (activeTab === 'overdue')      return tasks.filter(t => t.is_overdue)
+    if (activeTab === 'mine')         return allActive
+    if (activeTab === 'overdue')      return overdueItems
     if (activeTab === 'assignedByMe') return assignedByMeTasks
     if (activeTab === 'completed')    return completedTasks
     return []
@@ -307,7 +295,7 @@ export default function Tasks() {
   function renderCard(item) {
     if (isCompletedTab)    return <CompletedTaskCard key={item.id} item={item} />
     if (isAssignedByMeTab) return <TaskCard key={item.id} item={item} onDelete={handleDelete} onComplete={handleComplete} />
-    if (role === 'member') return <AssignedTaskCard key={item.id} item={item} onComplete={handleComplete} onStart={handleStart} />
+    if (isAssignedByOther(item.id)) return <AssignedTaskCard key={item.id} item={item} onComplete={handleComplete} onStart={handleStart} />
     return <TaskCard key={item.id} item={item} onDelete={handleDelete} onComplete={handleComplete} />
   }
 
@@ -318,9 +306,7 @@ export default function Tasks() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Tasks</h1>
-          <p className={styles.subtitle}>
-            {role === 'member' ? 'Your tasks and assignments' : 'Your tasks and to-dos'}
-          </p>
+          <p className={styles.subtitle}>Your tasks and assignments</p>
         </div>
         <button className={styles.refreshBtn} onClick={refresh} title="Refresh" disabled={!loaded}>
           <RefreshIcon />
@@ -329,7 +315,7 @@ export default function Tasks() {
 
       {/* Tabs */}
       <div className={styles.tabs}>
-        {tabs.map(tab => (
+        {TABS.map(tab => (
           <button
             key={tab.key}
             className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}

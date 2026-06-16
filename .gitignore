@@ -52,3 +52,7 @@ project_structure.md
 PROJECTSTRUCTURE.md
 debugging.md
 gitbranchplan.md
+
+# ── Deployment & test docs (local reference only) ────────────────────────────
+test_summary_frontend.md
+ec2_deploy_frontend.md

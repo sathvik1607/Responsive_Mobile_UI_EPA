@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useUser } from '../../context/UserContext'
 import { useNotifications } from '../../context/NotificationContext'
 import styles from './Notifications.module.css'
 
@@ -26,8 +25,6 @@ const TYPE_LABELS = {
 
 export default function Notifications() {
   const { notifications, unreadCount, refresh, markRead, markAll } = useNotifications()
-  const { user } = useUser()
-  const role = user?.role
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -65,7 +62,7 @@ export default function Notifications() {
                   {TYPE_LABELS[n.type] || n.type}
                 </span>
                 <p className={styles.message}>{n.message}</p>
-                {n.type === 'update_request' && role === 'member' && (
+                {n.type === 'update_request' && (
                   <Link
                     to="/requests"
                     className={styles.respondLink}

@@ -18,16 +18,16 @@ const WINDOW_AFTER_MINS  = 30  // keep alerting for this many minutes after the 
 const CHECK_INTERVAL_MS  = 60_000
 
 export function useScheduleAlerts() {
-  const { userId, role } = useUser()
+  const { userId } = useUser()
   const [queue, setQueue] = useState([])
   const alertedIds = useRef(new Set()) // persists across re-renders and poll cycles
 
   const check = useCallback(async () => {
     if (!userId) return
     try {
-      const fetches = [getMeetings(userId), getTasks(userId)]
-      if (role === 'member') fetches.push(getAssignedTasks(userId))
-      const [meetings, ownTasks, assignedTasks = []] = await Promise.all(fetches)
+      const [meetings, ownTasks, assignedTasks] = await Promise.all([
+        getMeetings(userId), getTasks(userId), getAssignedTasks(userId),
+      ])
 
       const items = [
         ...meetings.map(m => ({
@@ -80,7 +80,7 @@ export function useScheduleAlerts() {
         }
       })
     } catch {}
-  }, [userId, role])
+  }, [userId])
 
   useEffect(() => {
     check()

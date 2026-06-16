@@ -42,10 +42,8 @@ export default function MoreSheet({ open, onClose }) {
           <div className={styles.profileAvatar}>{initials}</div>
           <div className={styles.profileInfo}>
             <span className={styles.profileName}>{displayName}</span>
-            {role && (
-              <span className={`${styles.roleBadge} ${role === 'owner' ? styles.roleOwner : styles.roleMember}`}>
-                {role.charAt(0).toUpperCase() + role.slice(1)}
-              </span>
+            {role === 'owner' && (
+              <span className={`${styles.roleBadge} ${styles.roleOwner}`}>Team Lead</span>
             )}
           </div>
         </div>

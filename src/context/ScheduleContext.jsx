@@ -14,8 +14,7 @@ export function useSchedule() {
 }
 
 export function ScheduleProvider({ children }) {
-  const { userId, user } = useUser()
-  const role = user?.role
+  const { userId } = useUser()
   const [meetings,       setMeetings]       = useState([])
   const [tasks,          setTasks]          = useState([])
   const [assignedTasks,  setAssignedTasks]  = useState([])
@@ -26,10 +25,8 @@ export function ScheduleProvider({ children }) {
     if (!userId) return
     setError(null)
 
-    // Members fetch both their own tasks and assigned tasks in parallel;
-    // owners only fetch their own tasks.
-    const fetches = [getMeetings(userId), getTasks(userId)]
-    if (role === 'member') fetches.push(getAssignedTasks(userId))
+    // Fetch own tasks + tasks assigned to this user by others (all members)
+    const fetches = [getMeetings(userId), getTasks(userId), getAssignedTasks(userId)]
 
     Promise.all(fetches)
       .then(([m, t, a]) => {
@@ -39,9 +36,9 @@ export function ScheduleProvider({ children }) {
         setLoaded(true)
       })
       .catch(err => { setError(err.message || 'Could not load schedule'); setLoaded(true) })
-  }, [userId, role])
+  }, [userId])
 
-  // Initial fetch on mount (or when userId/role changes after login)
+  // Initial fetch on mount (or when userId changes after login)
   useEffect(() => { refresh() }, [refresh])
 
   // Listen for cross-component refresh signals (fired by Assistant, alert popup, etc.)

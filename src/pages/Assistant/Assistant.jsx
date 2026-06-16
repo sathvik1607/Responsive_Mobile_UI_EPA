@@ -68,22 +68,46 @@ export default function Assistant() {
     return () => window.removeEventListener('pa:delete-session', handler)
   }, [setMessages])
 
-  // Listen for proactive messages dispatched by the global Layout poller.
-  // Layout handles the actual API polling so it works on all pages.
+  // On mount: drain any messages that arrived while the user was on another page.
+  // Layout writes to this buffer before dispatching the event; if nobody was
+  // listening (user was away from chat), the buffer persists until next mount.
   useEffect(() => {
+    const bufferKey = `pa_pending_chat_${userId}`
+    try {
+      const pending = JSON.parse(localStorage.getItem(bufferKey) || '[]')
+      if (pending.length) {
+        const injected = pending.map(text => ({
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          text,
+          timestamp: new Date().toISOString(),
+          proactive: true,
+        }))
+        setMessages(prev => [...prev, ...injected])
+        localStorage.removeItem(bufferKey)
+      }
+    } catch { /* ignore */ }
+  }, [userId, setMessages])
+
+  // Live proactive messages dispatched by the global Layout poller.
+  // Layout handles the actual API polling so it works on all pages.
+  // Clear the buffer here since we're delivering the messages live.
+  useEffect(() => {
+    const bufferKey = `pa_pending_chat_${userId}`
     const handler = (e) => {
-      const injected = e.detail.map(text => ({
+      localStorage.removeItem(bufferKey)
+      const injected = (e.detail || []).map(text => ({
         id:        crypto.randomUUID(),
         role:      'assistant',
         text,
         timestamp: new Date().toISOString(),
         proactive: true,
       }))
-      setMessages(prev => [...prev, ...injected])
+      if (injected.length) setMessages(prev => [...prev, ...injected])
     }
     window.addEventListener('pa:proactive-messages', handler)
     return () => window.removeEventListener('pa:proactive-messages', handler)
-  }, [setMessages])
+  }, [userId, setMessages])
 
 
   const handleSend = async (text) => {

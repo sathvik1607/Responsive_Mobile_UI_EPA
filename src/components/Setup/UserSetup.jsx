@@ -133,7 +133,7 @@ export default function UserSetup({ loginMode = false }) {
 
             {tab === 'owner' ? (
               <form className={styles.form} onSubmit={handleOwnerSubmit} noValidate>
-                <label className={styles.label}>Team Lead Name</label>
+                <label className={styles.label}>Your Name</label>
                 <input
                   className={styles.input}
                   type="text"
@@ -170,7 +170,7 @@ export default function UserSetup({ loginMode = false }) {
                 {error && <p className={styles.error}>{error}</p>}
                 {slowHint && <p className={styles.hint}>Waking up server, please wait…</p>}
                 <button type="submit" className={styles.btn} disabled={loading}>
-                  {loading ? 'Creating…' : 'Register as Owner →'}
+                  {loading ? 'Creating…' : 'Register as Lead Member →'}
                 </button>
               </form>
             ) : (

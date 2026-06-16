@@ -238,8 +238,7 @@ function AssignedTaskCard({ item, onComplete }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function Schedule() {
-  const { userId, user } = useUser()
-  const role = user?.role
+  const { userId } = useUser()
   const { meetings, tasks, assignedTasks, loaded, error, refresh } = useSchedule()
 
   const handleDelete = useCallback(async (itemId) => {
@@ -252,8 +251,7 @@ export default function Schedule() {
     refresh()
   }, [userId, refresh])
 
-  const isEmpty = meetings.length === 0 && tasks.length === 0 &&
-    (role !== 'member' || assignedTasks.length === 0)
+  const isEmpty = meetings.length === 0 && tasks.length === 0 && assignedTasks.length === 0
 
   return (
     <div className={styles.page}>
@@ -297,15 +295,13 @@ export default function Schedule() {
               <TaskCard key={item.id} item={item} onDelete={handleDelete} onComplete={handleComplete} />
             )}
           />
-          {role === 'member' && (
-            <Section
-              title="Assigned to Me" icon="📌"
-              items={assignedTasks} emptyMsg="No tasks assigned to you"
-              renderCard={item => (
-                <AssignedTaskCard key={item.id} item={item} onComplete={handleComplete} />
-              )}
-            />
-          )}
+          <Section
+            title="Assigned to Me" icon="📌"
+            items={assignedTasks} emptyMsg="No tasks assigned to you"
+            renderCard={item => (
+              <AssignedTaskCard key={item.id} item={item} onComplete={handleComplete} />
+            )}
+          />
         </div>
       )}
     </div>

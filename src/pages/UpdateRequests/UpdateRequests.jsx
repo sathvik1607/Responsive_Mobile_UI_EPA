@@ -25,8 +25,8 @@ function StatusBadge({ status }) {
 }
 
 export default function UpdateRequests() {
-  const { userId, role, teamId } = useUser()
-  const [members, setMembers]   = useState([])
+  const { userId, teamId } = useUser()
+  const [members, setMembers]     = useState([])
   const [memberMap, setMemberMap] = useState({})
 
   useEffect(() => {
@@ -39,41 +39,54 @@ export default function UpdateRequests() {
     }).catch(() => {})
   }, [teamId])
 
-  if (role === 'owner') {
-    return <OwnerView userId={userId} teamId={teamId} members={members} memberMap={memberMap} />
-  }
-  if (role === 'member') {
-    return <MemberView userId={userId} memberMap={memberMap} />
-  }
+  // All members can send and receive requests — no role check
   return (
-    <div className={styles.page}>
-      <p className={styles.muted}>Role not assigned. Contact your team owner.</p>
-    </div>
+    <AllMembersView
+      userId={userId}
+      teamId={teamId}
+      members={members}
+      memberMap={memberMap}
+    />
   )
 }
 
-// ── Owner View ─────────────────────────────────────────────────────────────────
+function AllMembersView({ userId, teamId, members, memberMap }) {
+  // ── Sent (compose + list) ─────────────────────────────────────────────────
+  const [sentRequests, setSentRequests]   = useState([])
+  const [sentLoading, setSentLoading]     = useState(true)
+  const [expandedId, setExpandedId]       = useState(null)
 
-function OwnerView({ userId, teamId, members, memberMap }) {
-  const [sentRequests, setSentRequests] = useState([])
-  const [loading, setLoading]           = useState(true)
-  const [expandedId, setExpandedId]     = useState(null)
+  const [toUserId, setToUserId]           = useState('')
+  const [subject, setSubject]             = useState('')
+  const [body, setBody]                   = useState('')
+  const [sending, setSending]             = useState(false)
+  const [sendError, setSendError]         = useState('')
+  const [sendSuccess, setSendSuccess]     = useState('')
 
-  const [toUserId, setToUserId]       = useState('')
-  const [subject, setSubject]         = useState('')
-  const [body, setBody]               = useState('')
-  const [sending, setSending]         = useState(false)
-  const [sendError, setSendError]     = useState('')
-  const [sendSuccess, setSendSuccess] = useState('')
+  // ── Received (inbox + history) ────────────────────────────────────────────
+  const [requests, setRequests]           = useState([])
+  const [recvLoading, setRecvLoading]     = useState(true)
+  const [respondingId, setRespondingId]   = useState(null)
+  const [responseText, setResponseText]   = useState('')
+  const [responding, setResponding]       = useState(false)
+  const [respondError, setRespondError]   = useState('')
 
   const fetchSent = useCallback(() => {
     getSentRequests(userId)
       .then(setSentRequests)
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => setSentLoading(false))
+  }, [userId])
+
+  const fetchReceived = useCallback(() => {
+    getReceivedRequests(userId)
+      .then(setRequests)
+      .catch(() => {})
+      .finally(() => setRecvLoading(false))
   }, [userId])
 
   useEffect(() => { fetchSent() }, [fetchSent])
+  useEffect(() => { fetchReceived() }, [fetchReceived])
 
   const handleSend = async (e) => {
     e.preventDefault()
@@ -99,16 +112,39 @@ function OwnerView({ userId, teamId, members, memberMap }) {
     } catch { /* silent */ }
   }
 
-  const teamMembers = members.filter(m => m.role === 'member')
+  const openRespond = (reqId) => {
+    setRespondingId(reqId === respondingId ? null : reqId)
+    setResponseText('')
+    setRespondError('')
+  }
+
+  const handleRespond = async (req) => {
+    if (!responseText.trim()) { setRespondError('Response cannot be empty'); return }
+    setResponding(true); setRespondError('')
+    try {
+      await respondToRequest(req.id, userId, responseText.trim())
+      setRespondingId(null); setResponseText('')
+      fetchReceived()
+    } catch (err) {
+      setRespondError(err?.response?.data?.detail || err.message || 'Failed to respond')
+    } finally {
+      setResponding(false)
+    }
+  }
+
+  // All team members except self are valid recipients
+  const recipients = members.filter(m => m.user_id !== userId)
+
+  const pending = requests.filter(r => r.status === 'pending')
+  const history = requests.filter(r => r.status !== 'pending')
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Update Requests</h1>
-        <span className={styles.roleBadge}>Owner</span>
       </div>
 
-      {/* Compose */}
+      {/* ── Compose ─────────────────────────────────────────────────────── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>New Request</h2>
         <form className={styles.composeForm} onSubmit={handleSend} noValidate>
@@ -122,7 +158,7 @@ function OwnerView({ userId, teamId, members, memberMap }) {
                 disabled={sending}
               >
                 <option value="">Select member…</option>
-                {teamMembers.map(m => (
+                {recipients.map(m => (
                   <option key={m.user_id} value={m.user_id}>{m.name}</option>
                 ))}
               </select>
@@ -158,10 +194,10 @@ function OwnerView({ userId, teamId, members, memberMap }) {
         </form>
       </section>
 
-      {/* Sent list */}
+      {/* ── Sent Requests ────────────────────────────────────────────────── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>
-          Sent Requests
+          Sent
           {sentRequests.filter(r => r.status === 'pending').length > 0 && (
             <span className={styles.count}>
               {sentRequests.filter(r => r.status === 'pending').length} pending
@@ -169,7 +205,7 @@ function OwnerView({ userId, teamId, members, memberMap }) {
           )}
         </h2>
 
-        {loading ? (
+        {sentLoading ? (
           <p className={styles.muted}>Loading…</p>
         ) : sentRequests.length === 0 ? (
           <p className={styles.muted}>No requests sent yet.</p>
@@ -205,7 +241,6 @@ function OwnerView({ userId, teamId, members, memberMap }) {
                       )}
                     </div>
                   </div>
-
                   {isExpanded && (
                     <div className={styles.expandedBody}>
                       {req.body && (
@@ -233,67 +268,15 @@ function OwnerView({ userId, teamId, members, memberMap }) {
           </div>
         )}
       </section>
-    </div>
-  )
-}
 
-// ── Member View ────────────────────────────────────────────────────────────────
-
-function MemberView({ userId, memberMap }) {
-  const [requests, setRequests]       = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [respondingId, setRespondingId] = useState(null)
-  const [responseText, setResponseText] = useState('')
-  const [responding, setResponding]   = useState(false)
-  const [respondError, setRespondError] = useState('')
-
-  const fetchRequests = useCallback(() => {
-    getReceivedRequests(userId)
-      .then(setRequests)
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [userId])
-
-  useEffect(() => { fetchRequests() }, [fetchRequests])
-
-  const openRespond = (reqId) => {
-    setRespondingId(reqId === respondingId ? null : reqId)
-    setResponseText('')
-    setRespondError('')
-  }
-
-  const handleRespond = async (req) => {
-    if (!responseText.trim()) { setRespondError('Response cannot be empty'); return }
-    setResponding(true); setRespondError('')
-    try {
-      await respondToRequest(req.id, userId, responseText.trim())
-      setRespondingId(null); setResponseText('')
-      fetchRequests()
-    } catch (err) {
-      setRespondError(err?.response?.data?.detail || err.message || 'Failed to respond')
-    } finally {
-      setResponding(false)
-    }
-  }
-
-  const pending = requests.filter(r => r.status === 'pending')
-  const history = requests.filter(r => r.status !== 'pending')
-
-  return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>Update Requests</h1>
-        <span className={`${styles.roleBadge} ${styles.roleMember}`}>Member</span>
-      </div>
-
-      {/* Inbox */}
+      {/* ── Inbox ────────────────────────────────────────────────────────── */}
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>
           Inbox
           {pending.length > 0 && <span className={styles.count}>{pending.length}</span>}
         </h2>
 
-        {loading ? (
+        {recvLoading ? (
           <p className={styles.muted}>Loading…</p>
         ) : pending.length === 0 ? (
           <p className={styles.muted}>No pending requests.</p>
@@ -304,7 +287,7 @@ function MemberView({ userId, memberMap }) {
                 <div className={styles.requestMeta}>
                   <div className={styles.requestInfo}>
                     <span className={styles.requestTo}>
-                      From: <strong>{memberMap[req.from_user_id] || `Owner #${req.from_user_id}`}</strong>
+                      From: <strong>{memberMap[req.from_user_id] || `Member #${req.from_user_id}`}</strong>
                     </span>
                     <span className={styles.requestSubject}>{req.subject}</span>
                     {req.body && (
@@ -360,7 +343,7 @@ function MemberView({ userId, memberMap }) {
         )}
       </section>
 
-      {/* History */}
+      {/* ── History ──────────────────────────────────────────────────────── */}
       {history.length > 0 && (
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>History</h2>
@@ -370,7 +353,7 @@ function MemberView({ userId, memberMap }) {
                 <div className={styles.requestMeta}>
                   <div className={styles.requestInfo}>
                     <span className={styles.requestTo}>
-                      From: <strong>{memberMap[req.from_user_id] || `Owner #${req.from_user_id}`}</strong>
+                      From: <strong>{memberMap[req.from_user_id] || `Member #${req.from_user_id}`}</strong>
                     </span>
                     <span className={styles.requestSubject}>{req.subject}</span>
                   </div>
