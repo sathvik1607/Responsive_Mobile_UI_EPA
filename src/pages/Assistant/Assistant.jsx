@@ -63,10 +63,14 @@ export default function Assistant() {
   useEffect(() => {
     const handler = () => {
       setMessages([{ ...WELCOME, timestamp: new Date().toISOString() }])
+      // Clear shown-notification dedup set and buffer so any still-unread
+      // DB notifications can be re-delivered by injectUnread after the reset.
+      try { localStorage.removeItem(`pa_shown_notifications_${userId}`) } catch { /* ignore */ }
+      try { localStorage.removeItem(`pa_pending_chat_${userId}`) } catch { /* ignore */ }
     }
     window.addEventListener('pa:delete-session', handler)
     return () => window.removeEventListener('pa:delete-session', handler)
-  }, [setMessages])
+  }, [userId, setMessages])
 
   // On mount: drain any messages that arrived while the user was on another page.
   // Layout writes to this buffer before dispatching the event; if nobody was
