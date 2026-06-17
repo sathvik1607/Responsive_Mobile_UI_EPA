@@ -1,0 +1,30 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="paGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2E3020"/>
+      <stop offset="100%" stop-color="#3A3C26"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded square -->
+  <rect width="200" height="200" rx="46" fill="url(#paGrad)"/>
+  <!-- Subtle gold inner ring -->
+  <rect x="7" y="7" width="186" height="186" rx="40" fill="none" stroke="rgba(201,162,39,0.28)" stroke-width="1.5"/>
+  <!-- P — brighter gold -->
+  <text x="44" y="134"
+    font-family="'Helvetica Neue', Arial Black, Arial, sans-serif"
+    font-size="102" font-weight="900"
+    fill="#F0C84A"
+    letter-spacing="-3">P</text>
+  <!-- A — standard accent gold -->
+  <text x="106" y="134"
+    font-family="'Helvetica Neue', Arial Black, Arial, sans-serif"
+    font-size="102" font-weight="900"
+    fill="#C9A227"
+    letter-spacing="-3">A</text>
+  <!-- Sparkle dot -->
+  <circle cx="166" cy="40" r="7" fill="rgba(201,162,39,0.35)"/>
+  <circle cx="166" cy="40" r="3.5" fill="#F0C84A"/>
+  <!-- Tiny satellite dots -->
+  <circle cx="150" cy="30" r="2.5" fill="rgba(201,162,39,0.22)"/>
+  <circle cx="176" cy="54" r="1.8" fill="rgba(201,162,39,0.22)"/>
+</svg>

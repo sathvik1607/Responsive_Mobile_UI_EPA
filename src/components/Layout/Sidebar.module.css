@@ -31,10 +31,10 @@
 }
 
 .brandName {
-  font-size: 0.82rem;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: 0.14em;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
@@ -54,16 +54,10 @@
 .brandAI {
   font-size: 0.52rem;
   font-weight: 700;
-  color: var(--text-muted);
-  letter-spacing: 0.16em;
+  color: var(--accent);
+  letter-spacing: 0.14em;
   white-space: nowrap;
-}
-
-.agentLabel {
-  font-size: 0.6rem;
-  color: #F97316;
-  font-weight: 500;
-  letter-spacing: 0.03em;
+  opacity: 0.75;
 }
 
 /* ── Scrollable content ──────────────────────────────────────────────────────*/

@@ -120,15 +120,14 @@ export default function Sidebar() {
     <aside className={styles.sidebar}>
       {/* Brand */}
       <div className={styles.brand}>
-        <AlumnxSvg size={30} />
+        <PaLogoSvg size={34} />
         <div className={styles.brandText}>
-          <span className={styles.brandName}>ALUMNX</span>
+          <span className={styles.brandName}>Personal Assistant</span>
           <div className={styles.brandAIRow}>
             <span className={styles.brandAILine} />
-            <span className={styles.brandAI}>AI LABS</span>
+            <span className={styles.brandAI}>AI · MEETINGS · TASKS</span>
             <span className={styles.brandAILine} />
           </div>
-          <span className={styles.agentLabel}>Personal Assistant</span>
         </div>
       </div>
 
@@ -177,20 +176,33 @@ export default function Sidebar() {
   )
 }
 
-// ── AlumnX brand SVG ─────────────────────────────────────────────────────────
+// ── PA brand SVG ──────────────────────────────────────────────────────────────
 
-function AlumnxSvg({ size = 28 }) {
-  const h = Math.round(size * 1.1)
+function PaLogoSvg({ size = 32 }) {
   return (
-    <svg width={size} height={h} viewBox="0 0 28 31" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="14,1 1,26 27,26" stroke="white" strokeWidth="1.8" strokeLinejoin="round"/>
-      <line x1="6.5" y1="20" x2="21.5" y2="20" stroke="white" strokeWidth="1.8"/>
-      <circle cx="14" cy="17" r="3.8" fill="#F97316"/>
-      <line x1="7"    y1="26" x2="5"    y2="31" stroke="white" strokeWidth="1.3"/>
-      <line x1="10.5" y1="26" x2="9.5"  y2="31" stroke="white" strokeWidth="1.3"/>
-      <line x1="14"   y1="26" x2="14"   y2="31" stroke="white" strokeWidth="1.3"/>
-      <line x1="17.5" y1="26" x2="18.5" y2="31" stroke="white" strokeWidth="1.3"/>
-      <line x1="21"   y1="26" x2="23"   y2="31" stroke="white" strokeWidth="1.3"/>
+    <svg width={size} height={size} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="paGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#2E3020"/>
+          <stop offset="100%" stopColor="#3A3C26"/>
+        </linearGradient>
+      </defs>
+      <rect width="200" height="200" rx="46" fill="url(#paGrad)"/>
+      <rect x="7" y="7" width="186" height="186" rx="40" fill="none" stroke="rgba(201,162,39,0.28)" strokeWidth="1.5"/>
+      <text x="44" y="134"
+        fontFamily="'Helvetica Neue', Arial Black, Arial, sans-serif"
+        fontSize="102" fontWeight="900"
+        fill="#F0C84A"
+        letterSpacing="-3">P</text>
+      <text x="106" y="134"
+        fontFamily="'Helvetica Neue', Arial Black, Arial, sans-serif"
+        fontSize="102" fontWeight="900"
+        fill="#C9A227"
+        letterSpacing="-3">A</text>
+      <circle cx="166" cy="40" r="7" fill="rgba(201,162,39,0.35)"/>
+      <circle cx="166" cy="40" r="3.5" fill="#F0C84A"/>
+      <circle cx="150" cy="30" r="2.5" fill="rgba(201,162,39,0.22)"/>
+      <circle cx="176" cy="54" r="1.8" fill="rgba(201,162,39,0.22)"/>
     </svg>
   )
 }
