@@ -94,7 +94,7 @@ function MessageText({ text, isUser, suppressNumbered }) {
   if (!text) return null
 
   if (isUser) {
-    return <p className={styles.text}>{text}</p>
+    return <p className={styles.text}><LinkifyText text={text} /></p>
   }
 
   // Split on fenced code blocks first (```lang\n...\n```)
@@ -192,9 +192,9 @@ function ProseBlock({ text, suppressNumbered }) {
   return <>{output}</>
 }
 
-// Inline: **bold**, *italic*, `code`
+// Inline: **bold**, *italic*, `code`, and bare URLs
 function InlineText({ text }) {
-  const INLINE = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g
+  const INLINE = /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|https?:\/\/[^\s<>"'\]]+)/g
   const parts = text.split(INLINE)
   return (
     <>
@@ -205,8 +205,24 @@ function InlineText({ text }) {
           return <em key={i}>{part.slice(1, -1)}</em>
         if (part.startsWith('`') && part.endsWith('`'))
           return <code key={i}>{part.slice(1, -1)}</code>
+        if (/^https?:\/\//.test(part))
+          return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className={styles.chatLink}>{part}</a>
         return part
       })}
+    </>
+  )
+}
+
+// URL-only linkifier for user messages (no markdown processing)
+function LinkifyText({ text }) {
+  const parts = text.split(/(https?:\/\/[^\s<>"'\]]+)/g)
+  return (
+    <>
+      {parts.map((part, i) =>
+        /^https?:\/\//.test(part)
+          ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className={styles.chatLink}>{part}</a>
+          : part
+      )}
     </>
   )
 }

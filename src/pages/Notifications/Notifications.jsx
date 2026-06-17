@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNotifications } from '../../context/NotificationContext'
-import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './Notifications.module.css'
 
+// created_at is stored as server local time (IST) by Python datetime.now() —
+// NOT UTC. Use local parse so the relative time is correct.
 function fmtRelative(str) {
   if (!str) return ''
-  const diff = Date.now() - parseServerDate(str).getTime()
+  const diff = Date.now() - new Date(String(str).replace(' ', 'T')).getTime()
   const m = Math.floor(diff / 60_000)
   const h = Math.floor(diff / 3_600_000)
   const d = Math.floor(diff / 86_400_000)

@@ -60,6 +60,11 @@ function TaskCard({ item, onDelete, onComplete }) {
               ↳ sub-task
             </span>
           )}
+          {item.assigned_to_name && (
+            <span className={styles.metaDesc} style={{color:'var(--text-muted,#888)'}}>
+              👤 Assigned to {item.assigned_to_name}
+            </span>
+          )}
         </div>
       </div>
 

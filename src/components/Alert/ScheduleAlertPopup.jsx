@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useScheduleAlerts } from '../../hooks/useScheduleAlerts'
-import { parseServerDate } from '../../utils/parseServerDate'
 import styles from './ScheduleAlertPopup.module.css'
+
+// Schedule times (due_at, scheduled_at) are stored as server local time — NOT UTC.
+// Never use parseServerDate here; that appends Z and shifts times 5.5 h forward.
+const parseScheduleTime = (str) => {
+  if (!str) return new Date(NaN)
+  return new Date(String(str).replace(' ', 'T'))
+}
 
 export default function ScheduleAlertPopup() {
   const { queue, dismiss, complete } = useScheduleAlerts()
@@ -32,7 +38,7 @@ export default function ScheduleAlertPopup() {
   const isUpcomingMeeting = isMeeting && !item._isPast
 
   if (isUpcomingMeeting) {
-    const mins = Math.max(1, Math.round((parseServerDate(item.scheduled_at) - Date.now()) / 60_000))
+    const mins = Math.max(1, Math.round((parseScheduleTime(item.scheduled_at) - Date.now()) / 60_000))
     question = `Starting in ${mins} minute${mins !== 1 ? 's' : ''}`
     yesLabel = 'Got it'
   } else if (item._assigned_by_owner) {
@@ -89,7 +95,7 @@ export default function ScheduleAlertPopup() {
 
 function fmtTime(iso) {
   try {
-    return parseServerDate(iso).toLocaleTimeString('en-IN', {
+    return parseScheduleTime(iso).toLocaleTimeString('en-IN', {
       hour: '2-digit', minute: '2-digit', weekday: 'short',
     })
   } catch { return '' }

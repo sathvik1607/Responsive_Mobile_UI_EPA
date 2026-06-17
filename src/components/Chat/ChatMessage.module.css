@@ -147,6 +147,20 @@
 
 .textList li { margin: 2px 0; }
 
+/* Clickable links inside chat bubbles */
+.chatLink {
+  color: var(--accent);
+  text-decoration: underline;
+  word-break: break-all;
+}
+.chatLink:hover { opacity: 0.8; }
+
+/* User bubble is gold — keep link text dark/black so it's readable */
+.user .chatLink {
+  color: #2D1B69;
+}
+.user .chatLink:hover { opacity: 0.75; }
+
 /* ── Quick reply chips ────────────────────────────────────────────────────── */
 
 .chipsScroll {

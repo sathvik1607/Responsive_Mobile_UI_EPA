@@ -80,14 +80,19 @@ export default function Assistant() {
     try {
       const pending = JSON.parse(localStorage.getItem(bufferKey) || '[]')
       if (pending.length) {
-        const injected = pending.map(text => ({
-          id: crypto.randomUUID(),
-          role: 'assistant',
-          text,
-          timestamp: new Date().toISOString(),
-          proactive: true,
-        }))
-        setMessages(prev => [...prev, ...injected])
+        setMessages(prev => {
+          const recentTexts = new Set(prev.slice(-30).map(m => m.text))
+          const fresh = pending.filter(text => !recentTexts.has(text))
+          if (!fresh.length) return prev
+          const injected = fresh.map(text => ({
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            text,
+            timestamp: new Date().toISOString(),
+            proactive: true,
+          }))
+          return [...prev, ...injected]
+        })
         localStorage.removeItem(bufferKey)
       }
     } catch { /* ignore */ }
@@ -96,18 +101,28 @@ export default function Assistant() {
   // Live proactive messages dispatched by the global Layout poller.
   // Layout handles the actual API polling so it works on all pages.
   // Clear the buffer here since we're delivering the messages live.
+  // Text-dedup guards against the mount-race where both the proactive channel
+  // and the injectUnread fallback deliver the same message before the shown-IDs
+  // localStorage entry is written.
   useEffect(() => {
     const bufferKey = `pa_pending_chat_${userId}`
     const handler = (e) => {
       localStorage.removeItem(bufferKey)
-      const injected = (e.detail || []).map(text => ({
-        id:        crypto.randomUUID(),
-        role:      'assistant',
-        text,
-        timestamp: new Date().toISOString(),
-        proactive: true,
-      }))
-      if (injected.length) setMessages(prev => [...prev, ...injected])
+      const incoming = e.detail || []
+      if (!incoming.length) return
+      setMessages(prev => {
+        const recentTexts = new Set(prev.slice(-30).map(m => m.text))
+        const fresh = incoming.filter(text => !recentTexts.has(text))
+        if (!fresh.length) return prev
+        const injected = fresh.map(text => ({
+          id:        crypto.randomUUID(),
+          role:      'assistant',
+          text,
+          timestamp: new Date().toISOString(),
+          proactive: true,
+        }))
+        return [...prev, ...injected]
+      })
     }
     window.addEventListener('pa:proactive-messages', handler)
     return () => window.removeEventListener('pa:proactive-messages', handler)

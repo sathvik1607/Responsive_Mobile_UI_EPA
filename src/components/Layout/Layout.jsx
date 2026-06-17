@@ -47,14 +47,15 @@ export default function Layout() {
       try {
         const { data } = await api.get(`/proactive-chat/${userId}`)
         if (data.messages?.length) {
+          // Mark shown IDs BEFORE dispatching to chat so the 5 s injectUnread
+          // poller can't race-deliver the same DB notifications a second time.
+          await markCurrentNotificationsShown()
           playNotificationSound()
           window.dispatchEvent(new CustomEvent('pa:refresh-schedule'))
           // Buffer first so the event handler (if on chat page) can clear it;
           // if user is on another page the buffer persists until chat mounts.
           bufferMessages(data.messages)
           window.dispatchEvent(new CustomEvent('pa:proactive-messages', { detail: data.messages }))
-          // Pre-mark DB notifications as shown so the injector doesn't duplicate them
-          await markCurrentNotificationsShown()
         }
       } catch { /* ignore */ }
     }

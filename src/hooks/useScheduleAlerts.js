@@ -12,11 +12,19 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { getMeetings, getTasks, getAssignedTasks, completeItem } from '../services/scheduleService'
 import { useUser } from '../context/UserContext'
 import { playNotificationSound } from '../utils/notificationSound'
-import { parseServerDate } from '../utils/parseServerDate'
 
-const WINDOW_BEFORE_MINS = 2   // alert this many minutes before the item's time
-const WINDOW_AFTER_MINS  = 30  // keep alerting for this many minutes after the item's time
-const CHECK_INTERVAL_MS  = 60_000
+// due_at / scheduled_at are stored as server local time (IST), NOT UTC.
+// Appending Z would shift them 5.5 h into the future, breaking the alert window check.
+// Use this instead of parseServerDate for all schedule time comparisons.
+const parseScheduleTime = (str) => {
+  if (!str) return new Date(NaN)
+  return new Date(String(str).replace(' ', 'T'))
+}
+
+const TASK_WINDOW_BEFORE_MINS    = 0   // popup fires only after task due time passes
+const MEETING_WINDOW_BEFORE_MINS = 2   // popup fires 2 min before meeting start
+const WINDOW_AFTER_MINS          = 30  // keep alerting for this many minutes after the time
+const CHECK_INTERVAL_MS          = 60_000
 
 export function useScheduleAlerts() {
   const { userId } = useUser()
@@ -41,8 +49,10 @@ export function useScheduleAlerts() {
                     : m.title,
         })),
 
-        // Owner's own tasks — flag delegated ones so the popup can phrase them correctly
-        ...ownTasks.map(t => ({
+        // Owner's own tasks — filter active-only to avoid ghost popups for completed tasks
+        ...ownTasks
+          .filter(t => t.status === 'pending' || t.status === 'in_progress')
+          .map(t => ({
           ...t,
           _type:               'task',
           _time:               t.due_at,
@@ -52,14 +62,17 @@ export function useScheduleAlerts() {
         })),
 
         // Member's assigned tasks — separate alertKey namespace from own tasks
-        ...assignedTasks.map(t => ({
-          ...t,
-          _type:              'task',
-          _time:              t.due_at,
-          _alertKey:          `assigned_${t.id}`,
-          _assigned_by_owner: true,
-          _owner_name:        t.owner_name || 'your manager',
-        })),
+        // Filter to active-only so completed/cancelled tasks don't re-trigger the popup
+        ...assignedTasks
+          .filter(t => t.status === 'pending' || t.status === 'in_progress')
+          .map(t => ({
+            ...t,
+            _type:              'task',
+            _time:              t.due_at,
+            _alertKey:          `assigned_${t.id}`,
+            _assigned_by_owner: true,
+            _owner_name:        t.owner_name || 'your manager',
+          })),
       ]
 
       const now = Date.now()
@@ -67,8 +80,9 @@ export function useScheduleAlerts() {
         const baseKey = item._alertKey || `${item._type}_${item.id}`
         if (!item._time) return
 
-        const diffMins = (now - parseServerDate(item._time).getTime()) / 60_000
-        if (diffMins >= -WINDOW_BEFORE_MINS && diffMins <= WINDOW_AFTER_MINS) {
+        const diffMins = (now - parseScheduleTime(item._time).getTime()) / 60_000
+        const windowBefore = item._type === 'task' ? TASK_WINDOW_BEFORE_MINS : MEETING_WINDOW_BEFORE_MINS
+        if (diffMins >= -windowBefore && diffMins <= WINDOW_AFTER_MINS) {
           const isPast = diffMins >= 0
           // Meetings use separate keys per phase so both upcoming and started alerts fire
           const alertKey = item._type === 'meeting'
