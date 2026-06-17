@@ -80,6 +80,8 @@ export default function Layout() {
         const shown = new Set(JSON.parse(localStorage.getItem(shownKey) || '[]'))
         const toShow = notifications.filter(n => !shown.has(n.id))
         if (toShow.length === 0) return
+        // Sort oldest-first by DB created_at so chat order is chronological
+        toShow.sort((a, b) => String(a.created_at) > String(b.created_at) ? 1 : -1)
         const messages = toShow.map(n => n.message)
         playNotificationSound()
         // Refresh schedule if any notification affects meetings or assigned tasks
